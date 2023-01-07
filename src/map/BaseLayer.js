@@ -209,7 +209,7 @@ class BaseLayer {
         }
     }
 
-    isPointInPath(context, pixel) {
+    isPointInPath(context, pixel, isTap) {
         var context = this.canvasLayer.canvas.getContext(this.context);
         var data;
         if (
@@ -220,7 +220,11 @@ class BaseLayer {
         } else {
             data = this.dataSet.get();
         }
-        for (var i = 0; i < data.length; i++) {
+        // 目前只对对路径和飞线图进行 轮询点击
+        if (isTap && data[0] && data[0].geometry && data[0].geometry.type === 'LineString') {
+          data = data.slice().reverse();
+        }
+        for (var i = data.length - 1; i >= 0; i--) {
             context.beginPath();
             let options = this.options;
             var x = pixel.x * this.canvasLayer.devicePixelRatio;
@@ -235,6 +239,23 @@ class BaseLayer {
             pathSimple.draw(context, data[i], options);
 
             var geoType = data[i].geometry && data[i].geometry.type;
+
+            if (geoType == 'Point' || geoType == 'Polygon' || geoType == 'MultiPolygon') {
+              if (options.lineWidth) {
+                // 设置为全透明，避免闪动，下面同理
+                context.strokeStyle = 'rgba(0, 0, 0, 0)';
+                context.lineWidth = options.lineWidth;
+                context.stroke();
+              }
+            } else if (geoType == 'LineString' || type == 'MultiLineString') {
+              var lineWidth = data[i].lineWidth || data[i]._lineWidth || options.lineWidth;
+              if (lineWidth) {
+                context.strokeStyle = 'rgba(0, 0, 0, 0)';
+                context.lineWidth = lineWidth;
+                context.stroke();
+              }
+            }
+
             if (geoType.indexOf('LineString') > -1) {
                 if (context.isPointInStroke && context.isPointInStroke(x, y)) {
                     return data[i];
@@ -242,6 +263,10 @@ class BaseLayer {
             } else {
                 if (context.isPointInPath(x, y)) {
                     return data[i];
+                }
+                // 移动到描边上也显示
+                else if (context.isPointInStroke && context.isPointInStroke(x, y)) {
+                  return data[i];
                 }
             }
         }
@@ -299,7 +324,7 @@ class BaseLayer {
         if (!this.options.methods) {
             return;
         }
-        var dataItem = this.isPointInPath(this.getContext(), pixel);
+        var dataItem = this.isPointInPath(this.getContext(), pixel, true);
         if (dataItem) {
             if (this.options.draw === 'cluster') {
                 let children = this.getClusterPoints(dataItem);
@@ -365,6 +390,8 @@ class BaseLayer {
             }
 
             this.steps = {step: animationOptions.stepsRange.start};
+            // 需要移除之前的动画，否则会出现多个动效点
+            self.animator && self.animator.stop() && self.animator.onUpdate(null);
             self.animator = new TWEEN.Tween(this.steps)
                 .onUpdate(function () {
                     self._canvasUpdate(this.step);
@@ -385,16 +412,14 @@ class BaseLayer {
     addAnimatorEvent() {}
 
     animatorMovestartEvent() {
-        var animationOptions = this.options.animation;
         if (this.isEnabledTime() && this.animator) {
-            this.steps.step = animationOptions.stepsRange.start;
-            this.animator.stop();
+          this.hide && this.hide();
         }
     }
 
     animatorMoveendEvent() {
         if (this.isEnabledTime() && this.animator) {
-            this.animator.start();
+          this.show && this.show();
         }
     }
 }

@@ -652,6 +652,133 @@ function draw(context, x, y, size) {
     }
 }
 
+function pin(context, x, y, size) {
+  var w = size / 5 * 3;
+  // Height must be larger than width
+  var h = Math.max(w, size);
+  var r = w / 2;
+
+  // Dist on y with tangent point and circle center
+  var dy = r * r / (h - r);
+  var cy = y - h + r + dy;
+  var angle = Math.asin(dy / r);
+  // Dist on x with tangent point and circle center
+  var dx = Math.cos(angle) * r;
+
+  var tanX = Math.sin(angle);
+  var tanY = Math.cos(angle);
+
+  var cpLen = r * 0.6;
+  var cpLen2 = r * 0.7;
+
+  context.moveTo(x - dx, cy + dy);
+
+  context.arc(x, cy, r, Math.PI - angle, Math.PI * 2 + angle);
+  context.bezierCurveTo(x + dx - tanX * cpLen, cy + dy + tanY * cpLen, x, y - cpLen2, x, y);
+  context.bezierCurveTo(x, y - cpLen2, x - dx + tanX * cpLen, cy + dy + tanY * cpLen, x - dx, cy + dy);
+}
+
+function roundRect(context, x, y, size) {
+  var width = size;
+  var height = size;
+  var r = size / 4;
+  var r1;
+  var r2;
+  var r3;
+  var r4;
+
+  // Convert width and height to positive for better borderRadius
+  if (width < 0) {
+    x = x + width;
+    width = -width;
+  }
+  if (height < 0) {
+    y = y + height;
+    height = -height;
+  }
+
+  if (typeof r === "number") {
+    r1 = r2 = r3 = r4 = r;
+  } else if (r instanceof Array) {
+    if (r.length === 1) {
+      r1 = r2 = r3 = r4 = r[0];
+    } else if (r.length === 2) {
+      r1 = r3 = r[0];
+      r2 = r4 = r[1];
+    } else if (r.length === 3) {
+      r1 = r[0];
+      r2 = r4 = r[1];
+      r3 = r[2];
+    } else {
+      r1 = r[0];
+      r2 = r[1];
+      r3 = r[2];
+      r4 = r[3];
+    }
+  } else {
+    r1 = r2 = r3 = r4 = 0;
+  }
+
+  var total;
+  if (r1 + r2 > width) {
+    total = r1 + r2;
+    r1 *= width / total;
+    r2 *= width / total;
+  }
+  if (r3 + r4 > width) {
+    total = r3 + r4;
+    r3 *= width / total;
+    r4 *= width / total;
+  }
+  if (r2 + r3 > height) {
+    total = r2 + r3;
+    r2 *= height / total;
+    r3 *= height / total;
+  }
+  if (r1 + r4 > height) {
+    total = r1 + r4;
+    r1 *= height / total;
+    r4 *= height / total;
+  }
+  context.moveTo(x + r1, y);
+  context.lineTo(x + width - r2, y);
+  r2 !== 0 && context.arc(x + width - r2, y + r2, r2, -Math.PI / 2, 0);
+  context.lineTo(x + width, y + height - r3);
+  r3 !== 0 && context.arc(x + width - r3, y + height - r3, r3, 0, Math.PI / 2);
+  context.lineTo(x + r4, y + height);
+  r4 !== 0 && context.arc(x + r4, y + height - r4, r4, Math.PI / 2, Math.PI);
+  context.lineTo(x, y + r1);
+  r1 !== 0 && context.arc(x + r1, y + r1, r1, Math.PI, Math.PI * 1.5);
+}
+
+function diamond(context, cx, cy, size) {
+  var width = size / 2;
+  var height = size / 2;
+  context.moveTo(cx, cy - height);
+  context.lineTo(cx + width, cy);
+  context.lineTo(cx, cy + height);
+  context.lineTo(cx - width, cy);
+}
+
+function triangle(context, cx, cy, size) {
+  var width = size / 2;
+  var height = size / 2;
+  context.moveTo(cx, cy - height);
+  context.lineTo(cx + width, cy + height);
+  context.lineTo(cx - width, cy + height);
+}
+
+function arrow(context, x, y, size) {
+  var height = size;
+  var width = size;
+  var dx = width / 3 * 2;
+  context.moveTo(x, y);
+  context.lineTo(x + dx, y + height);
+  context.lineTo(x, y + height / 4 * 3);
+  context.lineTo(x - dx, y + height);
+  context.lineTo(x, y);
+}
+
 /**
  * @author kyle / http://nikai.us/
  */
@@ -673,15 +800,25 @@ var pathSimple = {
         switch (type) {
             case 'Point':
                 var size = data._size || data.size || options._size || options.size || 5;
-                if (symbol === 'circle') {
-                    if (options.bigData === 'Point') {
+                if (symbol === "circle") {
+                    if (options.bigData === "Point") {
                         context.moveTo(coordinates[0], coordinates[1]);
                     }
                     context.arc(coordinates[0], coordinates[1], size, 0, Math.PI * 2);
-                } else if (symbol === 'rect') {
+                } else if (symbol === "rect") {
                     context.rect(coordinates[0] - size / 2, coordinates[1] - size / 2, size, size);
-                } else if (symbol === 'honeycomb') {
+                } else if (symbol === "honeycomb") {
                     draw(context, coordinates[0], coordinates[1], size);
+                } else if (symbol === "pin") {
+                    pin(context, coordinates[0], coordinates[1], size);
+                } else if (symbol === "roundRect") {
+                    roundRect(context, coordinates[0] - size / 2, coordinates[1] - size / 2, size);
+                } else if (symbol === "diamond") {
+                    diamond(context, coordinates[0], coordinates[1], size);
+                } else if (symbol === "triangle") {
+                    triangle(context, coordinates[0], coordinates[1], size);
+                } else if (symbol === "arrow") {
+                    arrow(context, coordinates[0], coordinates[1], size);
                 }
                 break;
             case 'LineString':
@@ -4129,7 +4266,7 @@ var drawClip = {
 var imageMap = {};
 var stacks = {};
 var drawCluster = {
-    draw: function draw(context, dataSet, options) {
+    draw: function draw$$1(context, dataSet, options) {
         context.save();
         var data = dataSet instanceof DataSet ? dataSet.get() : dataSet;
         for (var i = 0; i < data.length; i++) {
@@ -4140,7 +4277,11 @@ var drawCluster = {
                 context.arc(coordinates[0], coordinates[1], item.size, 0, Math.PI * 2);
                 context.fillStyle = item.fillStyle;
                 context.fill();
-
+                if (options.strokeStyle && options.lineWidth) {
+                    context.lineWidth = options.lineWidth;
+                    context.strokeStyle = options.strokeStyle;
+                    context.stroke();
+                }
                 if (options.label && options.label.show !== false) {
                     context.fillStyle = options.label.fillStyle || 'white';
 
@@ -4174,9 +4315,31 @@ var drawCluster = {
 
         var iconOptions = Object.assign({}, options.iconOptions, item.iconOptions);
         var drawPoint = function drawPoint() {
-            context.beginPath();
-            context.arc(x, y, options.size || 5, 0, Math.PI * 2);
-            context.fillStyle = options.fillStyle || 'red';
+            var size = item.size || options.size || 5;
+            var symbol = options.symbol;
+            if (symbol === "rect") {
+                context.rect(x - size / 2, y - size / 2, size, size);
+            } else if (symbol === "honeycomb") {
+                draw(context, x, y, size);
+            } else if (symbol === "pin") {
+                pin(context, x, y, size);
+            } else if (symbol === "roundRect") {
+                roundRect(context, x - size / 2, y - size / 2, size);
+            } else if (symbol === "diamond") {
+                diamond(context, x, y, size);
+            } else if (symbol === "triangle") {
+                triangle(context, x, y, size);
+            } else if (symbol === "arrow") {
+                arrow(context, x, y, size);
+            } else {
+                context.arc(x, y, size, 0, Math.PI * 2);
+            }
+            if (options.strokeStyle && options.lineWidth) {
+                context.lineWidth = options.lineWidth;
+                context.strokeStyle = options.strokeStyle;
+                context.stroke();
+            }
+            context.fillStyle = item.fillStyle || options.fillStyle || "red";
             context.fill();
         };
         if (!iconOptions.url) {
@@ -5314,7 +5477,7 @@ var BaseLayer = function () {
         }
     }, {
         key: 'isPointInPath',
-        value: function isPointInPath(context, pixel) {
+        value: function isPointInPath(context, pixel, isTap) {
             var context = this.canvasLayer.canvas.getContext(this.context);
             var data;
             if (this.options.draw === 'cluster' && (!this.options.maxClusterZoom || this.options.maxClusterZoom >= this.getZoom())) {
@@ -5322,7 +5485,11 @@ var BaseLayer = function () {
             } else {
                 data = this.dataSet.get();
             }
-            for (var i = 0; i < data.length; i++) {
+            // 目前只对对路径和飞线图进行 轮询点击
+            if (isTap && data[0] && data[0].geometry && data[0].geometry.type === 'LineString') {
+                data = data.slice().reverse();
+            }
+            for (var i = data.length - 1; i >= 0; i--) {
                 context.beginPath();
                 var options = this.options;
                 var x = pixel.x * this.canvasLayer.devicePixelRatio;
@@ -5337,6 +5504,23 @@ var BaseLayer = function () {
                 pathSimple.draw(context, data[i], options);
 
                 var geoType = data[i].geometry && data[i].geometry.type;
+
+                if (geoType == 'Point' || geoType == 'Polygon' || geoType == 'MultiPolygon') {
+                    if (options.lineWidth) {
+                        // 设置为全透明，避免闪动，下面同理
+                        context.strokeStyle = 'rgba(0, 0, 0, 0)';
+                        context.lineWidth = options.lineWidth;
+                        context.stroke();
+                    }
+                } else if (geoType == 'LineString' || type == 'MultiLineString') {
+                    var lineWidth = data[i].lineWidth || data[i]._lineWidth || options.lineWidth;
+                    if (lineWidth) {
+                        context.strokeStyle = 'rgba(0, 0, 0, 0)';
+                        context.lineWidth = lineWidth;
+                        context.stroke();
+                    }
+                }
+
                 if (geoType.indexOf('LineString') > -1) {
                     if (context.isPointInStroke && context.isPointInStroke(x, y)) {
                         return data[i];
@@ -5345,6 +5529,10 @@ var BaseLayer = function () {
                     if (context.isPointInPath(x, y)) {
                         return data[i];
                     }
+                    // 移动到描边上也显示
+                    else if (context.isPointInStroke && context.isPointInStroke(x, y)) {
+                            return data[i];
+                        }
                 }
             }
         }
@@ -5408,7 +5596,7 @@ var BaseLayer = function () {
             if (!this.options.methods) {
                 return;
             }
-            var dataItem = this.isPointInPath(this.getContext(), pixel);
+            var dataItem = this.isPointInPath(this.getContext(), pixel, true);
             if (dataItem) {
                 if (this.options.draw === 'cluster') {
                     var children = this.getClusterPoints(dataItem);
@@ -5481,6 +5669,8 @@ var BaseLayer = function () {
                 }
 
                 this.steps = { step: animationOptions.stepsRange.start };
+                // 需要移除之前的动画，否则会出现多个动效点
+                self.animator && self.animator.stop() && self.animator.onUpdate(null);
                 self.animator = new TWEEN.Tween(this.steps).onUpdate(function () {
                     self._canvasUpdate(this.step);
                 }).repeat(Infinity);
@@ -5501,17 +5691,15 @@ var BaseLayer = function () {
     }, {
         key: 'animatorMovestartEvent',
         value: function animatorMovestartEvent() {
-            var animationOptions = this.options.animation;
             if (this.isEnabledTime() && this.animator) {
-                this.steps.step = animationOptions.stepsRange.start;
-                this.animator.stop();
+                this.hide && this.hide();
             }
         }
     }, {
         key: 'animatorMoveendEvent',
         value: function animatorMoveendEvent() {
             if (this.isEnabledTime() && this.animator) {
-                this.animator.start();
+                this.show && this.show();
             }
         }
     }]);
@@ -5539,6 +5727,9 @@ var AnimationLayer = function (_BaseLayer) {
             update: _this._canvasUpdate.bind(_this)
         });
 
+        // 动画循环次数
+        _this.animateLoopFrequency = 0;
+
         _this.init(_this.options);
 
         _this.canvasLayer = canvasLayer;
@@ -5565,6 +5756,7 @@ var AnimationLayer = function (_BaseLayer) {
 
             var self = this;
             self.options = options;
+
             this.initDataRange(options);
             this.context = self.options.context || '2d';
 
@@ -5671,11 +5863,8 @@ var AnimationLayer = function (_BaseLayer) {
                     return [x, y];
                 }
             };
-
             this.data = this.dataSet.get(dataGetOptions);
-
             this.processData(this.data);
-
             this.drawAnimation();
         }
     }, {
@@ -5686,7 +5875,6 @@ var AnimationLayer = function (_BaseLayer) {
             if (!data) {
                 return;
             }
-
             ctx.save();
             ctx.globalCompositeOperation = 'destination-out';
             ctx.fillStyle = 'rgba(0, 0, 0, .1)';
@@ -5709,8 +5897,8 @@ var AnimationLayer = function (_BaseLayer) {
             if (this.options.globalCompositeOperation) {
                 ctx.globalCompositeOperation = this.options.globalCompositeOperation;
             }
-
             var options = this.options;
+            var hasCalcAnimateLoopFrequency = false;
             for (var i = 0; i < data.length; i++) {
                 if (data[i].geometry.type === 'Point') {
                     ctx.beginPath();
@@ -5743,15 +5931,10 @@ var AnimationLayer = function (_BaseLayer) {
                         data[i]._index = 0;
                     }
                     var index = data[i]._index;
+
                     ctx.arc(data[i].geometry._coordinates[index][0], data[i].geometry._coordinates[index][1], size, 0, Math.PI * 2, true);
                     ctx.closePath();
-
-                    data[i]._index++;
-
-                    if (data[i]._index >= data[i].geometry._coordinates.length) {
-                        data[i]._index = 0;
-                    }
-
+                    data[i]._index = data[i]._index + (data[i]._step || 1);
                     var strokeStyle = data[i].strokeStyle || options.strokeStyle;
                     var fillStyle = data[i].fillStyle || options.fillStyle || 'yellow';
                     ctx.fillStyle = fillStyle;
@@ -5761,6 +5944,24 @@ var AnimationLayer = function (_BaseLayer) {
                         ctx.strokeStyle = strokeStyle;
                         ctx.stroke();
                     }
+                    if (data[i]._index >= data[i].geometry._coordinates.length) {
+                        if (options.isRound) {
+                            data[i]._step = -1;
+                            data[i]._index = data[i].geometry._coordinates.length - 1;
+                        } else {
+                            data[i]._index = 0;
+                            // 达到了临界值，并且在此次循环中动画次数没有计算，则加1 
+                            !hasCalcAnimateLoopFrequency && this.animateLoopFrequency++;
+                            // 开关关掉，一次循环中只能加一次动画执行次数
+                            hasCalcAnimateLoopFrequency = true;
+                        }
+                    }
+                    if (data[i]._index < 0 && options.isRound) {
+                        data[i]._step = 1;
+                        data[i]._index = 0;
+                        !hasCalcAnimateLoopFrequency && this.animateLoopFrequency++;
+                        hasCalcAnimateLoopFrequency = true;
+                    }
                 }
             }
             ctx.restore();
@@ -5768,9 +5969,29 @@ var AnimationLayer = function (_BaseLayer) {
     }, {
         key: "animate",
         value: function animate() {
+            var _this2 = this;
+
+            var prevAnimateLoopFrequency = this.animateLoopFrequency;
             this.drawAnimation();
             var animateTime = this.options.animateTime || 100;
-            this.timeout = setTimeout(this.animate.bind(this), animateTime);
+            var stayTime = this.options.stayTime;
+            // 动画有停留的时间，并且 循环次数也改变了，则使用停留时间
+            if (stayTime && this.animateLoopFrequency != prevAnimateLoopFrequency) {
+                this.hide();
+                this.timeout = setTimeout(function () {
+                    _this2.canvasLayer.show();
+                    _this2.animate();
+                }, stayTime);
+            } else {
+                this.timeout = setTimeout(this.animate.bind(this), animateTime);
+            }
+            var timesTimer = null;
+            if (this.options.times !== undefined && this.animateLoopFrequency >= this.options.times) {
+                this.stop();
+                timesTimer && clearTimeout(timesTimer);
+                timesTimer = setTimeout(this.hide.bind(this), animateTime);
+                return;
+            }
         }
     }, {
         key: "start",
@@ -5836,9 +6057,14 @@ var Layer = function (_BaseLayer) {
         var self = _this;
         options = options || {};
 
+        _this.timer = 0;
+        _this.handle = 0;
+
         _this.clickEvent = _this.clickEvent.bind(_this);
         _this.mousemoveEvent = _this.mousemoveEvent.bind(_this);
         _this.tapEvent = _this.tapEvent.bind(_this);
+        _this.touchendEvent = _this.touchendEvent.bind(_this);
+        _this.touchstartEvent = _this.touchstartEvent.bind(_this);
 
         self.init(options);
         self.argCheck(options);
@@ -5881,9 +6107,38 @@ var Layer = function (_BaseLayer) {
             get(Layer.prototype.__proto__ || Object.getPrototypeOf(Layer.prototype), 'mousemoveEvent', this).call(this, pixel, e);
         }
     }, {
+        key: 'touchstartEvent',
+        value: function touchstartEvent() {
+            this.timer = new Date();
+        }
+    }, {
+        key: 'touchendEvent',
+        value: function touchendEvent(e) {
+            var date = new Date();
+            // touchend 会多次执行，防抖一下
+            if (date - this.timer < 300 && date - this.handle > 300) {
+                this.handle = date;
+                this.tapEvent(e);
+            }
+        }
+    }, {
         key: 'tapEvent',
         value: function tapEvent(e) {
             var pixel = e.pixel;
+            var el = e.domEvent.target;
+            var box = el.getBoundingClientRect();
+            if (el.offsetWidth && el.offsetHeight) {
+                var scaleX = box.width / el.offsetWidth;
+                var scaleY = box.height / el.offsetHeight;
+                if (scaleX !== 1 || scaleY !== 1) {
+                    var clientX = e.clientX || e.changedTouches && e.changedTouches[0] && e.changedTouches[0].clientX;
+                    var clientY = e.clientY || e.changedTouches && e.changedTouches[0] && e.changedTouches[0].clientY;
+                    pixel = {
+                        x: (clientX - box.left - el.clientLeft) / scaleX,
+                        y: (clientY - box.top - el.clientTop) / scaleY
+                    };
+                }
+            }
             get(Layer.prototype.__proto__ || Object.getPrototypeOf(Layer.prototype), 'tapEvent', this).call(this, pixel, e);
         }
     }, {
@@ -5904,14 +6159,8 @@ var Layer = function (_BaseLayer) {
                 }
 
                 if ('ontouchend' in window.document && this.options.methods.tap) {
-                    map.addEventListener('touchstart', function (e) {
-                        timer = new Date();
-                    });
-                    map.addEventListener('touchend', function (e) {
-                        if (new Date() - timer < 300) {
-                            that.tapEvent(e);
-                        }
-                    });
+                    map.addEventListener('touchstart', this.touchstartEvent);
+                    map.addEventListener('touchend', this.touchendEvent);
                 }
             }
         }
@@ -5926,6 +6175,10 @@ var Layer = function (_BaseLayer) {
                 }
                 if (this.options.methods.mousemove) {
                     map.removeEventListener('mousemove', this.mousemoveEvent);
+                }
+                if (this.options.methods.tap) {
+                    map.removeEventListener('touchstart', this.touchstartEvent);
+                    map.removeEventListener('touchend', this.touchendEvent);
                 }
             }
         }
@@ -6105,7 +6358,8 @@ var Layer = function (_BaseLayer) {
                         clusterData[i].size = size || intensity.getSize(item.properties.point_count);
                         clusterData[i].fillStyle = color || intensity.getColor(item.properties.point_count);
                     } else {
-                        clusterData[i].size = self.options.size;
+                        clusterData[i].size = item.size || self.options.size;
+                        clusterData[i].fillStyle = item.fillStyle || self.options.fillStyle;
                     }
                 }
 

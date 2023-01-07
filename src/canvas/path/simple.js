@@ -4,6 +4,7 @@
 
 import DataSet from "../../data/DataSet";
 import {draw as drawHoneycomb} from "../shape/honeycomb";
+import {pin, roundRect, triangle, diamond, arrow} from "../shape/symbol";
 
 export default {
     drawDataSet: function (context, dataSet, options) {
@@ -21,19 +22,40 @@ export default {
         var coordinates = data.geometry._coordinates || data.geometry.coordinates;
         var symbol = data.symbol || options.symbol || 'circle';
         switch (type) {
-            case 'Point':
-                var size = data._size || data.size || options._size || options.size || 5;
-                if (symbol === 'circle') {
-                    if (options.bigData === 'Point') {
-                        context.moveTo(coordinates[0], coordinates[1]);
-                    }
-                    context.arc(coordinates[0], coordinates[1], size, 0, Math.PI * 2);
-                } else if (symbol === 'rect') {
-                    context.rect(coordinates[0] - size / 2, coordinates[1] - size / 2, size, size);
-                } else if (symbol === 'honeycomb') {
-                    drawHoneycomb(context, coordinates[0], coordinates[1], size);
-                }
-                break;
+          case 'Point':
+            var size =
+              data._size || data.size || options._size || options.size || 5;
+            if (symbol === "circle") {
+              if (options.bigData === "Point") {
+                context.moveTo(coordinates[0], coordinates[1]);
+              }
+              context.arc(coordinates[0], coordinates[1], size, 0, Math.PI * 2);
+            } else if (symbol === "rect") {
+              context.rect(
+                coordinates[0] - size / 2,
+                coordinates[1] - size / 2,
+                size,
+                size
+              );
+            } else if (symbol === "honeycomb") {
+              drawHoneycomb(context, coordinates[0], coordinates[1], size);
+            } else if (symbol === "pin") {
+              pin(context, coordinates[0], coordinates[1], size);
+            } else if (symbol === "roundRect") {
+              roundRect(
+                context,
+                coordinates[0] - size / 2,
+                coordinates[1] - size / 2,
+                size
+              );
+            } else if (symbol === "diamond") {
+              diamond(context, coordinates[0], coordinates[1], size);
+            } else if (symbol === "triangle") {
+              triangle(context, coordinates[0], coordinates[1], size);
+            } else if (symbol === "arrow") {
+              arrow(context, coordinates[0], coordinates[1], size);
+            }
+            break;
             case 'LineString':
                 this.drawLineString(context, coordinates);
                 break;

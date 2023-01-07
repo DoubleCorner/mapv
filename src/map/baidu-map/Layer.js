@@ -17,9 +17,14 @@ class Layer extends BaseLayer {
         var self = this;
         options = options || {};
 
+        this.timer = 0;
+        this.handle = 0;
+
         this.clickEvent = this.clickEvent.bind(this);
         this.mousemoveEvent = this.mousemoveEvent.bind(this);
         this.tapEvent = this.tapEvent.bind(this);
+        this.touchendEvent = this.touchendEvent.bind(this);
+        this.touchstartEvent = this.touchstartEvent.bind(this);
 
         self.init(options);
         self.argCheck(options);
@@ -58,9 +63,36 @@ class Layer extends BaseLayer {
         super.mousemoveEvent(pixel, e);
     }
 
+    touchstartEvent() {
+      this.timer = new Date();
+    }
+    
+    touchendEvent(e) {
+      var date = new Date();
+      // touchend 会多次执行，防抖一下
+      if (date - this.timer < 300 && date - this.handle > 300) {
+        this.handle = date;
+        this.tapEvent(e);
+      }
+    }
+
     tapEvent(e) {
-        var pixel = e.pixel;
-        super.tapEvent(pixel, e);
+      var pixel = e.pixel;
+      var el = e.domEvent.target;
+      var box = el.getBoundingClientRect();
+      if (el.offsetWidth && el.offsetHeight) {
+        var scaleX = box.width / el.offsetWidth;
+        var scaleY = box.height / el.offsetHeight;
+        if (scaleX !== 1 || scaleY !== 1) {
+          const clientX = e.clientX || (e.changedTouches && e.changedTouches[0] && e.changedTouches[0].clientX);
+          const clientY = e.clientY || (e.changedTouches && e.changedTouches[0] && e.changedTouches[0].clientY);
+          pixel = {
+            x: (clientX - box.left - el.clientLeft) / scaleX,
+            y: (clientY - box.top - el.clientTop) / scaleY
+          };
+        }
+      }
+      super.tapEvent(pixel, e);
     }
 
     bindEvent(e) {
@@ -79,14 +111,8 @@ class Layer extends BaseLayer {
             }
 
             if ('ontouchend' in window.document && this.options.methods.tap) {
-                map.addEventListener('touchstart', function (e) {
-                    timer = new Date();
-                });
-                map.addEventListener('touchend', function (e) {
-                    if (new Date() - timer < 300) {
-                        that.tapEvent(e);
-                    }
-                });
+              map.addEventListener('touchstart', this.touchstartEvent);
+              map.addEventListener('touchend', this.touchendEvent);
             }
         }
     }
@@ -100,6 +126,10 @@ class Layer extends BaseLayer {
             }
             if (this.options.methods.mousemove) {
                 map.removeEventListener('mousemove', this.mousemoveEvent);
+            }
+            if (this.options.methods.tap) {
+              map.removeEventListener('touchstart', this.touchstartEvent);
+              map.removeEventListener('touchend', this.touchendEvent);
             }
         }
     }
@@ -285,7 +315,8 @@ class Layer extends BaseLayer {
                     clusterData[i].size = size || intensity.getSize(item.properties.point_count);
                     clusterData[i].fillStyle = color || intensity.getColor(item.properties.point_count);
                 } else {
-                    clusterData[i].size = self.options.size;
+                  clusterData[i].size = item.size || self.options.size;
+                  clusterData[i].fillStyle = item.fillStyle || self.options.fillStyle;
                 }
             }
 

@@ -3,6 +3,8 @@
  */
 
 import DataSet from '../../data/DataSet';
+import {draw as drawHoneycomb} from "../shape/honeycomb";
+import {pin, roundRect, triangle, diamond, arrow} from "../shape/symbol";
 
 const imageMap = {};
 let stacks = {};
@@ -18,7 +20,11 @@ export default {
                 context.arc(coordinates[0], coordinates[1], item.size, 0, Math.PI * 2);
                 context.fillStyle = item.fillStyle;
                 context.fill();
-
+                if (options.strokeStyle && options.lineWidth) {
+                  context.lineWidth = options.lineWidth;
+                  context.strokeStyle = options.strokeStyle;
+                  context.stroke();
+                }
                 if (options.label && options.label.show !== false) {
                     context.fillStyle = options.label.fillStyle || 'white';
 
@@ -48,10 +54,32 @@ export default {
         let [x, y] = item.geometry._coordinates || item.geometry.coordinates;
         let iconOptions = Object.assign({}, options.iconOptions, item.iconOptions);
         const drawPoint = () => {
-            context.beginPath();
-            context.arc(x, y, options.size || 5, 0, Math.PI * 2);
-            context.fillStyle = options.fillStyle || 'red';
-            context.fill();
+          const size = item.size || options.size || 5;
+          const symbol = options.symbol;
+          if (symbol === "rect") {
+            context.rect(x - size / 2, y - size / 2, size, size);
+          } else if (symbol === "honeycomb") {
+            drawHoneycomb(context, x, y, size);
+          } else if (symbol === "pin") {
+            pin(context, x, y, size);
+          } else if (symbol === "roundRect") {
+            roundRect(context, x - size / 2, y - size / 2, size);
+          } else if (symbol === "diamond") {
+            diamond(context, x, y, size);
+          } else if (symbol === "triangle") {
+            triangle(context, x, y, size);
+          } else if (symbol === "arrow") {
+            arrow(context, x, y, size);
+          } else {
+            context.arc(x, y, size, 0, Math.PI * 2);
+          }
+          if (options.strokeStyle && options.lineWidth) {
+            context.lineWidth = options.lineWidth;
+            context.strokeStyle = options.strokeStyle;
+            context.stroke();
+          }
+          context.fillStyle = item.fillStyle || options.fillStyle || "red";
+          context.fill();
         };
         if (!iconOptions.url) {
             drawPoint();
