@@ -244,7 +244,7 @@ class BaseLayer {
               if (options.lineWidth) {
                 // 设置为全透明，避免闪动，下面同理
                 context.strokeStyle = 'rgba(0, 0, 0, 0)';
-                context.lineWidth = options.lineWidth;
+                context.lineWidth = data[i].lineWidth || data[i]._lineWidth || options.lineWidth;
                 context.stroke();
               }
             } else if (geoType == 'LineString' || type == 'MultiLineString') {
