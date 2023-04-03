@@ -240,16 +240,10 @@ class BaseLayer {
 
             var geoType = data[i].geometry && data[i].geometry.type;
 
-            if (geoType == 'Point' || geoType == 'Polygon' || geoType == 'MultiPolygon') {
-              if (options.lineWidth) {
-                // 设置为全透明，避免闪动，下面同理
-                context.strokeStyle = 'rgba(0, 0, 0, 0)';
-                context.lineWidth = data[i].lineWidth || data[i]._lineWidth || options.lineWidth;
-                context.stroke();
-              }
-            } else if (geoType == 'LineString' || type == 'MultiLineString') {
+            if (['Point', 'Polygon', 'MultiPolygon', 'LineString', 'MultiLineString'].indexOf(geoType) !== -1) {
               var lineWidth = data[i].lineWidth || data[i]._lineWidth || options.lineWidth;
               if (lineWidth) {
+                // 设置为全透明，避免闪动，下面同理
                 context.strokeStyle = 'rgba(0, 0, 0, 0)';
                 context.lineWidth = lineWidth;
                 context.stroke();
