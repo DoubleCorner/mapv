@@ -85,8 +85,12 @@ export default {
                 options.multiPolygonDraw = function() {
                     context.fill();
 
-                    if ((item.strokeStyle || options.strokeStyle) && options.lineWidth) {
+                    if (item.strokeStyle || options.strokeStyle) {
+                      var lineWidth = item.lineWidth || item._lineWidth || options.lineWidth;
+                      if (lineWidth) {
+                        context.lineWidth = lineWidth;
                         context.stroke();
+                      }
                     }
                 }
                 pathSimple.draw(context, item, options);
@@ -95,8 +99,12 @@ export default {
 
                     context.fill();
 
-                    if ((item.strokeStyle || options.strokeStyle) && options.lineWidth) {
+                    if (item.strokeStyle || options.strokeStyle) {
+                      var lineWidth = item.lineWidth || item._lineWidth || options.lineWidth;
+                      if (lineWidth) {
+                        context.lineWidth = lineWidth;
                         context.stroke();
+                      }
                     }
 
                 } else if (type == 'LineString' || type == 'MultiLineString') {
